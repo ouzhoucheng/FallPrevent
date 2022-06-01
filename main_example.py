@@ -4,7 +4,7 @@ import struct
 import q4
 import onefilter
 
-# uart0=UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1))
+uart0=UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
 
 class MPU6050Data:
     def __init__(self):
@@ -47,8 +47,8 @@ class MPU6050:
         self.i2c = I2C(bus,scl=scl,sda=sda,freq=freq)
         self.MPU6050_ADDRESS = address
         self.setSampleRate(100) # 采样速率100Hz
-        self.setGResolution(4) # 加速度=-4g
-        self.setGyroResolution(500) # 角速度+-500deg/s
+        self.setGResolution(2) # 加速度=-4g
+        self.setGyroResolution(250) # 角速度+-500deg/s
         self.reg_writeByte(self.MPU6050_RA_PWR_MGMT_1, 0b00000010) # 使用陀螺仪y轴作为时钟参考
         #Controls frequency of wakeups in accel low power mode plus the sensor standby modes
         self.reg_writeByte(self.MPU6050_RA_PWR_MGMT_2, 0x00) # 低电量模式
@@ -101,6 +101,7 @@ class MPU6050:
         return  self.reg_read(self.MPU6050_RA_INT_STATUS,1)
 
 LED = Pin(25,Pin.OUT)
+Yaw = 0
 lasttime = 0
 if __name__ == '__main__':
     mpu = MPU6050()
@@ -110,16 +111,13 @@ if __name__ == '__main__':
         # print("running time:", dt)
         g=mpu.readData()
         utime.sleep_ms(25)
-        # print("X:{:.2f}  Y:{:.2f}  Z:{:.2f}".format(g.Gx,g.Gy,g.Gz))
-        # print("X:{:.2f}  Y:{:.2f}  Z:{:.2f}".format(g.Gyrox,g.Gyroy,g.Gyroz))
-        # r=onefilter.one_filter(g.Gx,g.Gy,g.Gz,g.Gyrox,g.Gyroy,g.Gyroz)
-        # print("{:.1f} {:.1f}".format(r[2],r[3]))
 
-        q=q4.IMUupdate(g.Gyrox/65.5*0.0174533,g.Gyroy/65.5*0.0174533,g.Gyroz/65.5*0.0174533,g.Gx/8192,g.Gy/8192,g.Gz/8192)
-        print("{:.1f},{:.1f}\n".format(q[0],q[1]))
-        # uart0.write("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],q[2]))
-        # if abs(r[0]) > 60 or abs(r[1]) > 60:
-        #     LED.value(1)
-        # else:
-        #     LED.value(0)
+        r=onefilter.one_filter(g.Gyrox/131,g.Gyroy/131,g.Gyroz/131,g.Gx,g.Gy,g.Gz)
+        uart0.write("{:.1f},{:.1f},{:.1f}\n".format(r[0],r[1],0))
+        # print("{:.1f} {:.1f}".format(r[2],r[3]))
+        
+        # q=q4.IMUupdate(g.Gyrox/131*0.0174533,g.Gyroy/131*0.0174533,g.Gyroz/131*0.0174533,g.Gx,g.Gy,g.Gz) # 角度换弧度, 
+        # uart0.write("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],0))
+        # print("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],q[2]))
+
         lasttime = thistims
