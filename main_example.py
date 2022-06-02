@@ -8,9 +8,9 @@ uart0=UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
 
 class MPU6050Data:
     def __init__(self):
-        self.Gx=0
-        self.Gy=0
-        self.Gz=0
+        self.Ax=0
+        self.Ay=0
+        self.Az=0
         self.Temperature=0
         self.Gyrox=0
         self.Gyroy=0
@@ -47,8 +47,8 @@ class MPU6050:
         self.i2c = I2C(bus,scl=scl,sda=sda,freq=freq)
         self.MPU6050_ADDRESS = address
         self.setSampleRate(100) # 采样速率100Hz
-        self.setGResolution(2) # 加速度=-4g
-        self.setGyroResolution(250) # 角速度+-500deg/s
+        self.setGResolution(16) # 加速度=-4g
+        self.setGyroResolution(2000) # 角速度+-500deg/s
         self.reg_writeByte(self.MPU6050_RA_PWR_MGMT_1, 0b00000010) # 使用陀螺仪y轴作为时钟参考
         #Controls frequency of wakeups in accel low power mode plus the sensor standby modes
         self.reg_writeByte(self.MPU6050_RA_PWR_MGMT_2, 0x00) # 低电量模式
@@ -69,9 +69,9 @@ class MPU6050:
 
         # first 3 short value are Accelerometer
 
-        AccData.Gx = ShortData[0] * self.AccelerationFactor
-        AccData.Gy = ShortData[1] * self.AccelerationFactor
-        AccData.Gz = ShortData[2] * self.AccelerationFactor
+        AccData.Ax = ShortData[0] * self.AccelerationFactor
+        AccData.Ay = ShortData[1] * self.AccelerationFactor
+        AccData.Az = ShortData[2] * self.AccelerationFactor
 
         #temperature
         AccData.Temperature = ShortData[3] * self.TemperatureGain + self.TemperatureOffset
@@ -112,12 +112,13 @@ if __name__ == '__main__':
         g=mpu.readData()
         utime.sleep_ms(25)
 
-        r=onefilter.one_filter(g.Gyrox/131,g.Gyroy/131,g.Gyroz/131,g.Gx,g.Gy,g.Gz)
-        uart0.write("{:.1f},{:.1f},{:.1f}\n".format(r[0],r[1],0))
+        # r=onefilter.one_filter(g.Gyrox,g.Gyroy,g.Gyroz,g.Ax,g.Ay,g.Az)
+        # uart0.write("{:.1f},{:.1f},{:.1f}\n".format(r[0],r[1],0))
         # print("{:.1f} {:.1f}".format(r[2],r[3]))
         
-        # q=q4.IMUupdate(g.Gyrox/131*0.0174533,g.Gyroy/131*0.0174533,g.Gyroz/131*0.0174533,g.Gx,g.Gy,g.Gz) # 角度换弧度, 
-        # uart0.write("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],0))
+        q=q4.IMUupdate(g.Gyrox*0.0174533,g.Gyroy*0.0174533,g.Gyroz*0.0174533,g.Ax*9.8,g.Ay*9.8,g.Az*9.8) # 角度换弧度, 
+        uart0.write("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],q[2]))
         # print("{:.1f},{:.1f},{:.1f}\n".format(q[0],q[1],q[2]))
+        # print("{:.1f},{:.1f},{:.1f}\n".format(g.Ax,g.Ay,g.Az))
 
         lasttime = thistims

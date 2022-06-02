@@ -1,7 +1,7 @@
 #四元数解算
 import math
-Kp=10 #比例增益支配率收敛到加速度计/磁强计
-Ki=0.001 #积分增益支配率的陀螺仪偏见的衔接
+Kp=4 #比例增益支配率收敛到加速度计/磁强计
+Ki=0.0005 #积分增益支配率的陀螺仪偏见的衔接
 halfT=0.018 #采样周期的一半
 q0=1
 q1=0
@@ -53,7 +53,7 @@ def IMUupdate(gx,gy,gz,ax,ay,az):
         Yaw=math.atan((2*q1*q2+2*q0*q3)/(q0*q0+q1*q1-q2*q2-q3*q3))*57.3;
     a[0]=Pitch
     a[1]=Roll
-    # a[2]=Yaw
+    a[2]=Yaw
     # if ay*ay+az*az!=0:
     #     a[2]=-math.atan(ax/math.sqrt(ay*ay+az*az))*57.2957795
     # if ax*ax+az*az!=0:
